@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Petit Singe Deluxe – Tour par tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body {
+    background: #0d0d0d;
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+h1 { color: #ff3ea5; margin-bottom: 20px; text-align:center; }
+
+input, select, button {
+    padding: 12px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    outline: none;
+}
+input, select { background: #1b1b1b; color:#fff; }
+button { background:#ff3ea5; color:#fff; font-weight:700; cursor:pointer; transition:0.2s; margin-top:5px; }
+button:hover { opacity:0.9; }
+
+.return-btn {
+    display: none; /* cacher au départ */
+    position: fixed;
+    bottom: 15px;
+    left: 15px;  /* en bas à gauche */
+    padding: 6px 12px;  /* petit bouton */
+    background: #ff3ea5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 9999;
+}
+/* Bouton classement (copie du style return-btn mais à droite) */
+#scoreBtn {
+    display: none; /* s'affiche au début seulement quand le jeu commence */
+    position: fixed;
+    bottom: 15px;
+    right: 15px; /* à droite */
+    left: auto;
+    padding: 6px 12px;
+    background: #ff3ea5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 9999;
+    transition: 0.2s;
+}
+#scoreBtn:hover {
+    opacity: 0.9;
+}
+
+/* Modal scoreboard */
+#scoreModal {
+    display: none; /* caché au départ */
+    position: fixed;
+    inset: 0; /* top:0; bottom:0; left:0; right:0 */
+    background: rgba(0,0,0,0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#scoreModal > div {
+    background: #1b1b1b;
+    padding: 20px 25px;
+    border-radius: 12px;
+    text-align: center;
+    max-height: 80%;
+    overflow-y: auto;
+    width: 280px;
+}
+
+#scoreModal h3 {
+    color: #ff3ea5;
+    margin-bottom: 15px;
+}
+
+#scoreList div {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #ff3ea5;
+}
+
+/* Bouton fermer modal */
+#closeScoreModal {
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: #ff3ea5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 16px;
+    transition: 0.2s;
+}
+#closeScoreModal:hover {
+    opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 500px){
+    #scoreModal > div {
+        width: 90%;
+        padding: 15px 20px;
+    }
+    #scoreList div {
+        font-size: 16px;
+    }
+    #closeScoreModal {
+        font-size: 14px;
+        padding: 6px 12px;
+    }
+    #scoreBtn {
+        font-size: 14px;
+        padding: 5px 10px;
+    }
+}
+#playerList {
+    width: 90%;
+    max-width: 500px;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+.player {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px;
+    background:#1b1b1b;
+    border-radius:12px;
+    color:#ff3ea5;
+    font-weight:600;
+    font-size:16px;
+}
+.player:hover { background:#2b2b2b; }
+.delete { color:#ff3ea5; background:transparent; border:none; font-weight:700; cursor:pointer; font-size:16px; }
+.delete:hover { color:#ff1a1a; }
+
+#startBtn { margin-top:30px; width:100%; max-width:500px; padding:15px; font-size:18px; border-radius:12px; }
+#gameSection { display:none; flex-direction:column; align-items:center; }
+#deck { width:120px; height:170px; position:relative; margin-top:40px; }
+#deck::after { content:""; position:absolute; inset:0; border-radius:10px; background:#333; top:3px; left:3px; z-index:-1; }
+.card { width:120px; height:170px; position:absolute; top:0; left:0; transform-style:preserve-3d; transition:transform 0.6s ease, top 0.6s ease, left 0.6s ease; border-radius:10px; }
+.card .front, .card .back { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; display:flex; justify-content:center; align-items:center; font-size:40px; }
+.card .front { background:white; color:black; transform:rotateY(180deg); }
+.card .back { background:#ff3ea5; color:white; }
+.flip { transform:rotateY(180deg); }
+
+#rule { margin-top:30px; font-size:20px; text-align:center; width:80%; min-height:60px; }
+#counter { margin-top:20px; font-size:18px; color:#ff3ea5; }
+#miniDeck { display:flex; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+.miniCard { width:10px; height:15px; background:#ff3ea5; margin:1px; border-radius:2px; transition:opacity 0.3s; }
+#currentPlayer { margin-top:20px; font-size:20px; color:#ff3ea5; font-weight:700; text-align:center; }
+#playerDrinksList { margin-top:20px; width:80%; max-width:350px; }
+
+#endTurnBtn { display:none; margin-top:10px; padding:12px 20px; border-radius:12px; }
+#giveGorgeeBtn { display:none; margin-top:10px; padding:12px 20px; border-radius:12px; }
+
+.modal {
+    display:none; 
+    position:fixed; 
+    inset:0; 
+    background:rgba(0,0,0,0.8);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+.modal > div {
+    background:#1b1b1b;
+    padding:15px 20px;
+    border-radius:12px;
+    text-align:center;
+    max-height:300px;
+    overflow-y:auto;
+    width: 250px;
+}
+.modal h3 { color:#ff3ea5; margin-bottom:10px; }
+#distributeModal button { margin:5px 0; }
+#distributeModal p { color:#fff; margin-bottom:10px; }
+
+#animationSection {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0b0b0d;
+    z-index: 2000;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+}
+.drink-container { width: 130px; height: 260px; border: 3px solid #fff; border-radius: 16px; overflow: hidden; position: relative; transform-origin: center; }
+.drink-fill { position: absolute; left: 0; bottom: 0; width: 100%; height: 0%; background: #ff3ea5; transition: height 1.6s cubic-bezier(.2,.9,.3,1); }
+.shake { animation: shakeIt 1.2s cubic-bezier(.36,.07,.19,.97); }
+@keyframes shakeIt { 0% {transform:translateX(0) rotate(0deg);} 10% {transform:translateX(-4px) rotate(-1deg);} 20% {transform:translateX(4px) rotate(1deg);} 30% {transform:translateX(-3px) rotate(-0.5deg);} 40% {transform:translateX(3px) rotate(0.5deg);} 50% {transform:translateX(-2px) rotate(-0.5deg);} 60% {transform:translateX(2px) rotate(0.5deg);} 70% {transform:translateX(-1px) rotate(-0.3deg);} 80% {transform:translateX(1px) rotate(0.3deg);} 90% {transform:translateX(0) rotate(0deg);} 100% {transform:translateX(0) rotate(0deg);} }
+.droplet { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #ff3ea5; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.droplet.animate { animation: dropPop 400ms ease forwards, dropFall 1.2s 400ms cubic-bezier(.2,.8,.2,1) forwards; opacity:1; }
+@keyframes dropPop { 0% { transform: translateY(0) scale(1); opacity:1; } 50% { transform: translateY(-18px) scale(1.1); opacity:1; } 100% { transform: translateY(0) scale(1); opacity:1; } }
+@keyframes dropFall { 0% { transform: translateY(0) scale(1); opacity:1; } 100% { transform: translateY(160px) scale(0.9); opacity:0; } }
+.filled .drink-fill { height: 100% !important; }
+#animationText { color:#ff3ea5; font-size:24px; font-weight:bold; text-align:center; margin-top:20px; }
+.selected { background-color:#ff3ea5 !important; }
+</style>
+</head>
+<body>
+
+<h1>Ajouter les joueurs</h1>
+<div id="inputSection" style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; width:100%; max-width:500px;">
+    <input id="name" placeholder="Nom du joueur">
+    <select id="gender">
+        <option value="">Sexe</option>
+        <option value="Fille">Fille</option>
+        <option value="Garçon">Garçon</option>
+    </select>
+    <input id="birthday" type="date" placeholder="Anniversaire">
+    <button id="add">Ajouter</button>
+</div>
+
+<div id="playerList"></div>
+<button id="startBtn">Let's Drink 🥂</button>
+
+<div id="gameSection">
+    <div id="deck"></div>
+    <button id="drawBtn">Tirer une carte</button>
+    <div id="rule"></div>
+    <div id="counter">Cartes restantes : 52</div>
+    <div id="miniDeck"></div>
+    <div id="currentPlayer"></div>
+    <div id="playerDrinksList"></div>
+    <button id="endTurnBtn">Valider mon tour ✅</button>
+    <button id="giveGorgeeBtn">Gorgée donnée 🍻</button>
+</div>
+
+<div id="distributeModal" class="modal">
+    <div>
+        <h3>Distribuer les gorgées</h3>
+        <p id="ruleInModal"></p>
+        <p id="gorgeesLeft">Gorgées à distribuer : 0</p>
+        <div id="playersForGorgees"></div>
+        <button id="closeModal">Terminer</button>
+    </div>
+</div>
+
+<div id="linkModal" class="modal">
+    <div>
+        <h3>Choisis joueur(s) à lier</h3>
+        <div id="linkOptions"></div>
+        <button id="closeLinkModal">Valider</button>
+    </div>
+</div>
+
+<div id="duelModal" class="modal">
+    <div>
+        <h3>Choisis ton adversaire</h3>
+        <div id="duelOptions"></div>
+        <h3 style="margin:15px 0 5px 0;">Pile ou Face ?</h3>
+        <button id="pileBtn">PILE</button>
+        <button id="faceBtn">FACE</button>
+        <button id="closeDuelModal" style="margin-top:10px;">Annuler</button>
+    </div>
+</div>
+
+<div id="animationSection">
+    <div style="position: relative;" id="glassWrap">
+        <div id="glass" class="drink-container">
+            <div class="drink-fill"></div>
+        </div>
+    </div>
+    <div id="animationText">Chargement du jeu...</div>
+</div>
+<button id="returnBtn" class="return-btn"> 🔙</button>
+<!-- Bouton classement en bas à droite -->
+<button id="scoreBtn" class="return-btn" style="right: 15px; left: auto;">🏆</button>
+
+<!-- Modal pour le scoreboard -->
+<div id="scoreModal" class="modal">
+  <div>
+    <h3>Classement des joueurs 🏆</h3>
+    <div id="scoreList"></div>
+    <button id="closeScoreModal">Fermer</button>
+  </div>
+</div>
+<script>
+// ---------------- VARIABLES ----------------
+let players = [], cursedLinks = [], drinks = {}, groups = [], currentPlayerIndex = 0, currentLinkCount = 0;
+let kingsCount = 0;
+const groupColors = ["#ff3ea5","#3effa5","#3e64ff","#ffea3e","#ff7733","#33ff77","#7733ff","#ff33aa"];
+let cards = [
+  "A♠","2♠","3♠","4♠","5♠","6♠","7♠","8♠","9♠","10♠","J♠","Q♠","K♠",
+  "A♥","2♥","3♥","4♥","5♥","6♥","7♥","8♥","9♥","10♥","J♥","Q♥","K♥",
+  "A♣","2♣","3♣","4♣","5♣","6♣","7♣","8♣","9♣","10♣","J♣","Q♣","K♣",
+  "A♦","2♦","3♦","4♦","5♦","6♦","7♦","8♦","9♦","10♦","J♦","Q♦","K♦"
+];
+
+// ---------------- ELEMENTS ----------------
+const nameInput = document.getElementById("name");
+const genderInput = document.getElementById("gender");
+const birthdayInput = document.getElementById("birthday");
+const list = document.getElementById("playerList");
+const addBtn = document.getElementById("add");
+const startBtn = document.getElementById("startBtn");
+const inputSection = document.getElementById("inputSection");
+const gameSection = document.getElementById("gameSection");
+const drawBtn = document.getElementById("drawBtn");
+const currentPlayerDiv = document.getElementById("currentPlayer");
+const playerDrinksList = document.getElementById("playerDrinksList");
+const miniDeck = document.getElementById("miniDeck");
+const endTurnBtn = document.getElementById("endTurnBtn");
+const giveGorgeeBtn = document.getElementById("giveGorgeeBtn");
+const animationSection = document.getElementById("animationSection");
+const animationText = document.getElementById("animationText");
+
+const distributeModal = document.getElementById("distributeModal");
+const playersForGorgees = document.getElementById("playersForGorgees");
+const gorgeesLeft = document.getElementById("gorgeesLeft");
+const ruleInModal = document.getElementById("ruleInModal");
+const closeModal = document.getElementById("closeModal");
+
+const linkModal = document.getElementById("linkModal");
+const linkOptions = document.getElementById("linkOptions");
+const closeLinkModal = document.getElementById("closeLinkModal");
+
+const duelModal = document.getElementById("duelModal");
+const duelOptions = document.getElementById("duelOptions");
+const pileBtn = document.getElementById("pileBtn");
+const faceBtn = document.getElementById("faceBtn");
+const closeDuelModal = document.getElementById("closeDuelModal");
+
+// ------------------- ANIMATION VERRE -------------------
+async function playGlassAnimation() {
+    const glass = document.getElementById('glass');
+    const drinkFill = glass.querySelector('.drink-fill');
+    const glassWrap = document.getElementById('glassWrap');
+    glass.classList.remove('filled', 'shake');
+    drinkFill.style.height = "0%";
+    // Vibration longue au début
+    if (navigator.vibrate) {
+        navigator.vibrate(1600); // 1,6s = durée du remplissage
+    }
+    await new Promise(r => setTimeout(r, 50));
+    glass.classList.add('filled', 'shake');
+    let startTimes = [500, 1000, 1500];
+    for(let i = 0; i < 3; i++) {
+        let drop = document.createElement('div');
+        drop.className = 'droplet';
+        drop.style.left = (70 + i * 10) + 'px';
+        drop.style.top = '0px';
+        glassWrap.appendChild(drop);
+        setTimeout(() => drop.classList.add('animate'), startTimes[i]); 
+        drop.addEventListener('animationend', () => { if(drop.parentNode) drop.remove(); });
+    }
+    setTimeout(() => { glass.classList.remove('shake'); }, 1200);
+    await new Promise(r => setTimeout(r, 1800));
+}
+
+// ------------------- AJOUT JOUEURS -------------------
+addBtn.onclick = () => {
+  const name = nameInput.value.trim();
+  const gender = genderInput.value;
+  const birthday = birthdayInput.value;
+  if(!name || !gender || !birthday){ alert("Remplis tous les champs !"); return; }
+players.push({
+    name:name,
+    gender:gender,
+    birthday:birthday,
+    thumb:false,      // 👍🏻 roi des pouces
+    freeze:false,     // 🥶 reine du freeze
+    immunity:0        // ❤️‍🩹 immunités cumulables
+});
+  drinks[name] = 0;
+  nameInput.value = ""; 
+  genderInput.value = ""; 
+  birthdayInput.value = "";
+  renderPlayerList();
+};
+nameInput.addEventListener("keypress", e => { if(e.key === "Enter") addBtn.click(); });
+
+function renderPlayerList(){
+  list.innerHTML = "";
+  players.forEach((p, index) => {
+    const div = document.createElement("div");
+    div.className = "player";
+    div.innerHTML = `<span>${p.name}</span><button class="delete">X</button>`;
+    div.querySelector(".delete").onclick = () => { players.splice(index, 1); delete drinks[p.name]; renderPlayerList(); };
+    list.appendChild(div);
+  });
+}
+
+// ------------------- START GAME -------------------
+startBtn.onclick = async () => {
+  if(players.length < 1){ 
+    alert("Ajoute au moins un joueur !"); 
+    return; 
+  }
+
+  // Cacher le menu
+  inputSection.style.display = "none";
+  list.style.display = "none";
+  startBtn.style.display = "none";
+
+  // Afficher l'animation
+  animationSection.style.display = "flex";
+  await playGlassAnimation();
+
+  // Assurer que la goutte apparaît bien
+  const droplet = document.querySelector('.droplet');
+  if (droplet) droplet.style.opacity = "1";
+
+  // Lancer le jeu après un petit délai
+  setTimeout(() => {
+    animationSection.style.display = "none"; // cacher animation
+    gameSection.style.display = "flex";       // afficher la section jeu
+
+// Afficher le bouton Retour seulement maintenant
+returnBtn.style.display = "block";  
+
+// Afficher le bouton Classement aussi
+document.getElementById("scoreBtn").style.display = "block";
+
+    // Initialiser les éléments du jeu
+    currentPlayerIndex = 0;
+    updateCurrentPlayer();
+    renderDrinksList();
+    createMiniDeck();
+    giveGorgeeBtn.style.display = "block";
+  }, 50);
+};
+
+function updateCurrentPlayer(){ 
+  currentPlayerDiv.textContent = "Joueur actuel : " + players[currentPlayerIndex].name; 
+}
+
+function renderDrinksList(){
+  playerDrinksList.innerHTML = "";
+  players.forEach((p, index) => {
+
+    let emoji = "";
+    if(p.thumb) emoji += " 👍🏻";
+    if(p.freeze) emoji += " 🥶";
+    if(p.immunity > 0) emoji += " ❤️‍🩹".repeat(p.immunity);
+
+    const div = document.createElement("div");
+    div.id = `drinks-${index}`;
+    div.textContent = `${p.name}${emoji} : ${drinks[p.name]} gorgée(s)`;
+    div.style.color = "#ff3ea5";
+    div.style.marginBottom = "5px";
+
+    playerDrinksList.appendChild(div);
+  });
+}
+
+function createMiniDeck(){
+  miniDeck.innerHTML = "";
+  cards.forEach(() => { 
+    const div = document.createElement("div"); 
+    div.className = "miniCard"; 
+    miniDeck.appendChild(div); 
+  });
+}
+
+// ------------------- BOIRE ET LIENS MAUDITS -------------------
+function drink(playerIndex, amount){
+    const visited = new Set();
+    const affectedIndices = new Set();
+    function propagate(index, val){
+        if(visited.has(index)) return;
+        visited.add(index);
+        drinks[players[index].name] += val;
+        affectedIndices.add(index);
+        cursedLinks.filter(l => l.master === index).forEach(link => {
+            link.slaves.forEach(slaveIndex => propagate(slaveIndex, val));
+        });
+    }
+    propagate(playerIndex, amount);
+    affectedIndices.forEach(i => {
+        const div = document.getElementById(`drinks-${i}`);
+        if(div) {
+          let emoji = "";
+          if(players[i].thumb) emoji = " 👍🏻";
+          if(players[i].freeze) emoji = " 🥶";
+          div.textContent = `${players[i].name}${emoji} : ${drinks[players[i].name]} gorgée(s)`;
+        }
+    });
+}
+
+// ------------------- DISTRIBUTION GORGÉES -------------------
+function distributeGorgees(totalGorgees, ruleTextModal = ""){
+  let remaining = totalGorgees;
+  gorgeesLeft.textContent = `Gorgées à distribuer : ${remaining}`;
+  ruleInModal.textContent = ruleTextModal;
+  playersForGorgees.innerHTML = "";
+  players.forEach((p, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = p.name;
+    btn.onclick = () => { 
+        if(remaining <= 0) return; 
+        drink(i, 1); 
+        remaining--; 
+        gorgeesLeft.textContent = `Gorgées à distribuer : ${remaining}`; 
+    };
+    playersForGorgees.appendChild(btn);
+  });
+  distributeModal.style.display = "flex";
+  closeModal.onclick = () => { 
+    if(remaining > 0){ alert("Toutes les gorgées n'ont pas été distribuées !"); return; } 
+    distributeModal.style.display = "none"; 
+    endTurnBtn.style.display = "block"; 
+  };
+}
+
+// ------------------- CARTES -------------------
+function getRule(card){
+    const value = card.replace(/♠|♥|♣|♦/g,"");
+    switch(value){
+        case "A": return {text:"A – As : Distribue 3 gorgées à qui tu veux 🍻", drinkTotal:3};
+        case "2": return {text:"2 : Tu bois 1 gorgée 🫗", drink:1};
+        case "3": return {text:"3 : Distribue 3 gorgées 😈", drinkTotal:3};
+        case "4": return {text:"4 : Les filles boivent 👱‍♀️", target:"allFilles"};
+        case "5": return {text:"5 : Les gars boivent 🧔", target:"allGarcons"};
+        case "6": return {text:"6 : Choisis un joueur comme jumeau maudit 🫂", link:true, linkCount:1};
+        case "7": return {text:"7 : Main en l'air ! ✋", drinkTotal:1};
+        case "8": return {text:"8 : Duel ! Choisis un joueur et lance PILE ou FACE ⚔️", duel:true};
+        case "9": return {text:"9 : Jeu des rimes 🎤", drinkTotal:1};
+        case "10": return {text:"10 : IMUNITÉ (joker) 🛡️", drinkTotal:0, immunity:true};
+        case "J": return {text:"Valet – Roi des Pouces 👍", thumb:true};
+        case "Q": return {text:"Dame – Reine des Freeze ❄️", freeze:true};
+        case "K": return {text:"Roi – Verse dans le verre central 🫗", king:true};
+        default: return {text:"Carte inconnue", drink:0};
+    }
+}
+
+// ------------------- TIRER UNE CARTE -------------------
+let lastCard = null; // référence à la dernière carte affichée
+
+drawBtn.onclick = () => {
+    if(cards.length === 0){ 
+        alert("Plus de cartes 😂"); 
+        return; 
+    }
+
+    // Bloquer le tirage dès qu'on clique
+    drawBtn.disabled = true;
+
+    const deck = document.getElementById("deck");
+    const ruleText = document.getElementById("rule");
+    const counter = document.getElementById("counter");
+
+    // Tirer une carte au hasard
+    const cardValue = cards.splice(Math.floor(Math.random() * cards.length), 1)[0];
+    counter.textContent = "Cartes restantes : " + cards.length;
+
+    if(miniDeck.lastChild) miniDeck.removeChild(miniDeck.lastChild);
+
+    // Supprimer l'ancienne carte si elle existe
+    if(lastCard) lastCard.remove();
+
+    // Créer la nouvelle carte
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<div class="front">${cardValue}</div><div class="back">🎴</div>`;
+    document.body.appendChild(card);
+
+    const deckRect = deck.getBoundingClientRect();
+    card.style.top = deckRect.top + "px"; 
+    card.style.left = deckRect.left + "px";
+
+    setTimeout(() => card.classList.add("flip"), 50);
+
+    lastCard = card; // on garde une référence à cette carte
+
+    setTimeout(() => {
+        const rule = getRule(cardValue);
+        ruleText.textContent = rule.text;
+        const currentPlayer = players[currentPlayerIndex];
+
+        // -------- LOGIQUE DES CARTES --------
+        if (rule.king) {
+            kingsCount++;
+            if (kingsCount === 4) {
+                alert("🍻 Le dernier Roi est tombé !\n\nAllez glouglou le verre ou CUL SEC si refus 😈🔥");
+            }
+        }
+
+        if(rule.target === "allFilles") {
+            players.forEach((p,i) => { if(p.gender === "Fille") drink(i, 1); });
+        } else if(rule.target === "allGarcons") {
+            players.forEach((p,i) => { if(p.gender === "Garçon") drink(i, 1); });
+        }
+
+        if(rule.immunity){
+            currentPlayer.immunity++;
+            renderDrinksList();
+        }
+
+        if(rule.thumb){
+            players.forEach(p => p.thumb = false);
+            currentPlayer.thumb = true;
+            alert(`${currentPlayer.name} devient Roi des Pouces 👍🏻`);
+            renderDrinksList();
+        }
+
+        if(rule.freeze){
+            players.forEach(p => p.freeze = false);
+            currentPlayer.freeze = true;
+            alert(`${currentPlayer.name} devient Reine du Freeze 🥶`);
+            renderDrinksList();
+        }
+
+        if(rule.king){
+            if(typeof glass === "undefined") window.glass = 0;
+            glass++;
+            alert(`${currentPlayer.name} verse dans le verre central ! Total : ${glass}`);
+        }
+
+        // -------- LIEN MAUDIT --------
+        if(rule.link){
+            linkOptions.innerHTML = "";
+            players.forEach((p, i) => {
+                if(i !== currentPlayerIndex){
+                    const btn = document.createElement("button");
+                    btn.textContent = p.name;
+                    btn.onclick = () => {
+                        [...linkOptions.children].forEach(b => b.classList.remove("selected"));
+                        btn.classList.add("selected");
+                    };
+                    linkOptions.appendChild(btn);
+                }
+            });
+
+            linkModal.style.display = "flex";
+
+            closeLinkModal.onclick = () => {
+                const selected = linkOptions.querySelector(".selected");
+                if(!selected){
+                    alert("Choisis UNE personne à maudire.");
+                    return;
+                }
+                let slave = players.findIndex(p => p.name === selected.textContent);
+                cursedLinks.push({
+                    master: currentPlayerIndex,
+                    slaves: [slave]
+                });
+                linkModal.style.display = "none";
+                endTurnBtn.style.display = "block";  // bouton visible = drawBtn reste bloqué
+            };
+
+            return; // on attend que le lien soit choisi
+        }
+
+        // -------- DUEL --------
+        if(rule.duel){
+            openDuelModal(currentPlayerIndex);
+            return; // drawBtn reste bloqué
+        }
+
+        // -------- GORGÉES CLASSIQUES --------
+        if(rule.drink){
+            if(currentPlayer.immunity > 0){
+                const use = confirm("Tu veux utiliser une ❤️‍🩹 pour éviter de boire ?");
+                if(use){
+                    currentPlayer.immunity--;
+                    renderDrinksList();
+                } else {
+                    drink(currentPlayerIndex, rule.drink);
+                }
+            } else {
+                drink(currentPlayerIndex, rule.drink);
+            }
+        }
+
+        // -------- DISTRIBUTION GORGÉES --------
+        if(rule.drinkTotal){
+            distributeGorgees(rule.drinkTotal, rule.text);
+            return; // drawBtn reste bloqué tant que modal ouvert
+        }
+
+        // Si rien de spécial, fin du tour → afficher endTurnBtn
+        endTurnBtn.style.display = "block";
+        drawBtn.disabled = true; // bien bloquer tant que tour non validé
+
+    }, 600);
+};
+// ------------------- DUEL PILE OU FACE -------------------
+function openDuelModal(playerIndex){
+    duelModal.style.display = "flex";
+    duelOptions.innerHTML = "";
+
+    // créer les boutons des adversaires
+    players.forEach((p,i) => {
+        if(i !== playerIndex){
+            const btn = document.createElement("button");
+            btn.textContent = p.name;
+            btn.dataset.index = i;
+            btn.style.margin = "5px";
+            btn.onclick = () => {
+                // stocke l'adversaire choisi
+                duelModal.dataset.opponent = i;
+                Array.from(duelOptions.querySelectorAll("button")).forEach(b => b.classList.remove("selected"));
+                btn.classList.add("selected");
+            };
+            duelOptions.appendChild(btn);
+        }
+    });
+
+    // pile / face
+    pileBtn.onclick = () => resolveDuel("pile");
+    faceBtn.onclick = () => resolveDuel("face");
+
+    function resolveDuel(choice){
+        const opponentIndex = parseInt(duelModal.dataset.opponent);
+        if(isNaN(opponentIndex)){
+            alert("Sélectionne un adversaire !");
+            return;
+        }
+        const result = Math.random() < 0.5 ? "pile" : "face";
+        alert(`Résultat : ${result.toUpperCase()}`);
+        if(choice !== result){
+            alert(`${players[playerIndex].name} a perdu et boit 1 gorgée !`);
+            drink(playerIndex,1);
+        } else {
+            alert(`${players[opponentIndex].name} a perdu et boit 1 gorgée !`);
+            drink(opponentIndex,1);
+        }
+        duelModal.style.display = "none";
+        endTurnBtn.style.display = "block";
+    }
+
+    closeDuelModal.onclick = () => {
+        duelModal.style.display = "none";
+        endTurnBtn.style.display = "block";
+    };
+}
+
+// ------------------- VALIDER TOUR -------------------
+endTurnBtn.onclick = () => {
+    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+    updateCurrentPlayer();
+    drawBtn.disabled = false;
+    endTurnBtn.style.display = "none";
+    document.getElementById("rule").textContent = "";
+};
+
+// ------------------- GROUPES ET LIENS -------------------
+function createGroup(indices){
+    let existingGroups = new Set();
+    indices.forEach(i => { if(players[i].group !== undefined) existingGroups.add(players[i].group); });
+    let newGroupId;
+    if(existingGroups.size === 0){
+        newGroupId = groups.length;
+        groups.push({id:newGroupId, members:[...indices], color:groupColors[newGroupId % groupColors.length]});
+    } else {
+        newGroupId = [...existingGroups][0];
+        let allMembers = new Set(groups[newGroupId].members.concat(indices));
+        groups[newGroupId].members = [...allMembers];
+        existingGroups.forEach(gid => {
+            if(gid !== newGroupId){
+                groups[newGroupId].members = [...new Set(groups[newGroupId].members.concat(groups[gid].members))];
+                groups[gid].members.forEach(i => players[i].group = newGroupId);
+            }
+        });
+    }
+    groups[newGroupId].members.forEach(i => players[i].group = newGroupId);
+}
+
+function openLinkModal(count){
+    currentLinkCount = count;
+    linkOptions.innerHTML = "";
+    players.forEach((p,i)=>{
+        const btn = document.createElement("button");
+        btn.textContent = p.name;
+        btn.dataset.index = i;
+        btn.style.margin = "5px";
+        btn.onclick = () => btn.classList.toggle("selected");
+        linkOptions.appendChild(btn);
+    });
+    linkModal.style.display = "flex";
+}
+
+closeLinkModal.onclick = () => {
+    const selectedIndices = Array.from(linkOptions.querySelectorAll(".selected")).map(b => parseInt(b.dataset.index));
+    if(selectedIndices.length !== currentLinkCount){
+        alert(`Sélectionne ${currentLinkCount} joueur(s)`); 
+        return;
+    }
+    createGroup(selectedIndices);
+    linkModal.style.display = "none";
+
+    if(currentLinkCount === 1){
+        const master = currentPlayerIndex;
+        const slave = selectedIndices[0];
+        cursedLinks.push({ master, slaves: [slave] });
+    }
+
+    renderDrinksList();
+    endTurnBtn.style.display = "block";
+};
+
+document.getElementById("returnBtn").onclick = () => {
+    // Cacher l'écran du jeu
+    gameSection.style.display = "none";
+
+    // Réafficher le menu principal
+    inputSection.style.display = "flex";
+    list.style.display = "flex";
+    startBtn.style.display = "block";
+
+    // Réinitialiser certains éléments du jeu si nécessaire
+    document.getElementById("rule").textContent = "";
+    miniDeck.innerHTML = "";
+    endTurnBtn.style.display = "none";
+    giveGorgeeBtn.style.display = "none";
+    currentPlayerDiv.textContent = "";
+    playerDrinksList.innerHTML = "";
+
+    // Remettre les cartes à 52
+    cards = [
+        "A♠","2♠","3♠","4♠","5♠","6♠","7♠","8♠","9♠","10♠","J♠","Q♠","K♠",
+        "A♥","2♥","3♥","4♥","5♥","6♥","7♥","8♥","9♥","10♥","J♥","Q♥","K♥",
+        "A♣","2♣","3♣","4♣","5♣","6♣","7♣","8♣","9♣","10♣","J♣","Q♣","K♣",
+        "A♦","2♦","3♦","4♦","5♦","6♦","7♦","8♦","9♦","10♦","J♦","Q♦","K♦"
+    ];
+
+    // Réinitialiser compteurs
+    currentPlayerIndex = 0;
+    kingsCount = 0;
+    cursedLinks = [];
+    drinks = {};
+    players.forEach(p => drinks[p.name] = 0);
+};
+
+function showScoreboard() {
+    // Trie les joueurs par nombre de gorgées décroissant
+    const sortedPlayers = [...players].sort((a,b) => drinks[b.name] - drinks[a.name]);
+
+    const scoreList = document.getElementById("scoreList");
+    scoreList.innerHTML = ""; // reset
+
+    sortedPlayers.forEach((p, index) => {
+        const div = document.createElement("div");
+        div.textContent = `${index + 1}️⃣ ${p.name} : ${drinks[p.name]} gorgée(s)`;
+        div.style.color = "#ff3ea5";
+        div.style.marginBottom = "5px";
+        scoreList.appendChild(div);
+    });
+
+    document.getElementById("scoreModal").style.display = "flex";
+}
+
+// Fermer le modal
+document.getElementById("closeScoreModal").onclick = () => {
+    document.getElementById("scoreModal").style.display = "none";
+};
+
+// Bouton pour ouvrir le classement
+document.getElementById("scoreBtn").onclick = showScoreboard;
+
+// ------------------- BOUTON GORGÉE MANUELLE -------------------
+giveGorgeeBtn.onclick = () => { distributeGorgees(1, "Gorgée donnée manuelle"); };
+</script>
+</body>
+</html>
