@@ -361,9 +361,9 @@ async function playGlassAnimation() {
     const glassWrap = document.getElementById('glassWrap');
     glass.classList.remove('filled', 'shake');
     drinkFill.style.height = "0%";
-    // Vibration longue au début
-    if (navigator.vibrate) {
-        navigator.vibrate(1600); // 1,6s = durée du remplissage
+  // 🔔 Vibration directe sur interaction utilisateur
+    if(navigator.vibrate){
+        navigator.vibrate(200); // petit retour haptique immédiat
     }
     await new Promise(r => setTimeout(r, 50));
     glass.classList.add('filled', 'shake');
