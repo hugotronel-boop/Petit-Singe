@@ -310,15 +310,43 @@ button:hover { opacity:0.9; }
 </div>
 <script>
 // ---------------- VARIABLES ----------------
-let players = [], cursedLinks = [], drinks = {}, groups = [], currentPlayerIndex = 0, currentLinkCount = 0;
+
+// Joueurs & état du jeu
+let players = [];          // liste des joueurs
+let drinks = {};           // gorgées par joueur
+let cursedLinks = [];      // liens maudits
+let groups = [];           // groupes
+let currentPlayerIndex = 0;
+let currentLinkCount = 0;
 let kingsCount = 0;
-const groupColors = ["#ff3ea5","#3effa5","#3e64ff","#ffea3e","#ff7733","#33ff77","#7733ff","#ff33aa"];
-let cards = [
-  "A♠","2♠","3♠","4♠","5♠","6♠","7♠","8♠","9♠","10♠","J♠","Q♠","K♠",
-  "A♥","2♥","3♥","4♥","5♥","6♥","7♥","8♥","9♥","10♥","J♥","Q♥","K♥",
-  "A♣","2♣","3♣","4♣","5♣","6♣","7♣","8♣","9♣","10♣","J♣","Q♣","K♣",
-  "A♦","2♦","3♦","4♦","5♦","6♦","7♦","8♦","9♦","10♦","J♦","Q♦","K♦"
+
+// Couleurs des groupes
+const groupColors = [
+    "#ff3ea5",
+    "#3effa5",
+    "#3e64ff",
+    "#ffea3e",
+    "#ff7733",
+    "#33ff77",
+    "#7733ff",
+    "#ff33aa"
 ];
+
+// Paquet de cartes
+let cards = [
+    "A♠","2♠","3♠","4♠","5♠","6♠","7♠","8♠","9♠","10♠","J♠","Q♠","K♠",
+    "A♥","2♥","3♥","4♥","5♥","6♥","7♥","8♥","9♥","10♥","J♥","Q♥","K♥",
+    "A♣","2♣","3♣","4♣","5♣","6♣","7♣","8♣","9♣","10♣","J♣","Q♣","K♣",
+    "A♦","2♦","3♦","4♦","5♦","6♦","7♦","8♦","9♦","10♦","J♦","Q♦","K♦"
+];
+
+function getPlayerEmojis(player){
+    let e = "";
+    if(player.thumb) e += " 👍🏻";
+    if(player.freeze) e += " 🥶";
+    if(player.immunity > 0) e += " " + "❤️‍🩹".repeat(player.immunity);
+    return e;
+}
 
 // ---------------- ELEMENTS ----------------
 const nameInput = document.getElementById("name");
@@ -361,10 +389,6 @@ async function playGlassAnimation() {
     const glassWrap = document.getElementById('glassWrap');
     glass.classList.remove('filled', 'shake');
     drinkFill.style.height = "0%";
-  // 🔔 Vibration directe sur interaction utilisateur
-    if(navigator.vibrate){
-        navigator.vibrate(200); // petit retour haptique immédiat
-    }
     await new Promise(r => setTimeout(r, 50));
     glass.classList.add('filled', 'shake');
     let startTimes = [500, 1000, 1500];
@@ -439,6 +463,10 @@ startBtn.onclick = async () => {
     animationSection.style.display = "none"; // cacher animation
     gameSection.style.display = "flex";       // afficher la section jeu
 
+// CACHER la liste des joueurs et des gorgées pendant le jeu
+playerDrinksList.style.display = "none";
+list.style.display = "none";
+
 // Afficher le bouton Retour seulement maintenant
 returnBtn.style.display = "block";  
 
@@ -455,7 +483,9 @@ document.getElementById("scoreBtn").style.display = "block";
 };
 
 function updateCurrentPlayer(){ 
-  currentPlayerDiv.textContent = "Joueur actuel : " + players[currentPlayerIndex].name; 
+    const p = players[currentPlayerIndex];
+    currentPlayerDiv.textContent =
+        "Joueur actuel : " + p.name + getPlayerEmojis(p);
 }
 
 function renderDrinksList(){
@@ -463,15 +493,20 @@ function renderDrinksList(){
   players.forEach((p, index) => {
 
     let emoji = "";
-    if(p.thumb) emoji += " 👍🏻";
-    if(p.freeze) emoji += " 🥶";
-    if(p.immunity > 0) emoji += " ❤️‍🩹".repeat(p.immunity);
+    if (p.thumb) emoji += " 👍🏻";
+    if (p.freeze) emoji += " 🥶";
+    if (p.immunity > 0) emoji += " " + "❤️‍🩹".repeat(p.immunity);
 
     const div = document.createElement("div");
     div.id = `drinks-${index}`;
-    div.textContent = `${p.name}${emoji} : ${drinks[p.name]} gorgée(s)`;
+
+    // Juste le nombre + les emojis
+    div.textContent = `${drinks[p.name]}${emoji}`;
     div.style.color = "#ff3ea5";
     div.style.marginBottom = "5px";
+    div.style.fontSize = "20px";
+    div.style.fontWeight = "700";
+    div.style.textAlign = "center";
 
     playerDrinksList.appendChild(div);
   });
@@ -824,6 +859,12 @@ closeLinkModal.onclick = () => {
 };
 
 document.getElementById("returnBtn").onclick = () => {
+    // Supprimer la carte affichée si elle existe
+    if(lastCard) {
+        lastCard.remove();
+        lastCard = null;
+    }
+
     // Cacher l'écran du jeu
     gameSection.style.display = "none";
 
